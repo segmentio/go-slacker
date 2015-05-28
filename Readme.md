@@ -6,19 +6,20 @@
 ```go
 slack := slacker.New(tokens)
 
-slack.HandleFunc("hello", func(cmd *slacker.Command) (string, error) {
-  return "World", nil
+slack.HandleFunc("hello", func(cmd *slacker.Command) error {
+  fmt.Fprint(cmd, "Hello")
+  fmt.Fprint(cmd, " World")
+  return nil
 })
 
-slack.HandleFunc("boom", func(cmd *slacker.Command) (string, error) {
-  return "", fmt.Errorf("something exploded")
+slack.HandleFunc("boom", func(cmd *slacker.Command) error {
+  return fmt.Errorf("something exploded")
 })
 
-slack.HandleFunc("deploy", func(cmd *slacker.Command) (string, error) {
-  return "Deploying!", nil
+slack.HandleFunc("deploy", func(cmd *slacker.Command) error {
+  fmt.Fprintf(cmd, "Deploying %q", cmd.Text)
+  return nil
 })
-
-http.ListenAndServe(addr, slack)
 ```
 
 ## Usage

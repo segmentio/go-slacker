@@ -1,20 +1,21 @@
 package slacker
 
 import "net/http"
+import "bytes"
 import "sync"
 import "log"
-import "fmt"
+import "io"
 
 // Handler.
 type Handler interface {
-	HandleCommand(cmd *Command) (string, error)
+	HandleCommand(cmd *Command) error
 }
 
 // HandlerFunc convenience type.
-type HandlerFunc func(cmd *Command) (string, error)
+type HandlerFunc func(cmd *Command) error
 
 // HandleCommand invokes itself.
-func (h HandlerFunc) HandleCommand(cmd *Command) (string, error) {
+func (h HandlerFunc) HandleCommand(cmd *Command) error {
 	return h(cmd)
 }
 
@@ -27,6 +28,12 @@ type Command struct {
 	UserName    string
 	ChannelID   string
 	ChannelName string
+	buf         bytes.Buffer
+}
+
+// Write to the internal bytes.Buffer.
+func (c *Command) Write(p []byte) (int, error) {
+	return c.buf.Write(p)
 }
 
 // Slacker handles HTTP requests and command dispatching.
@@ -57,7 +64,7 @@ func (s *Slacker) Handle(name string, handler Handler) {
 }
 
 // HandleFunc registers `handler` function for command `name`.
-func (s *Slacker) HandleFunc(name string, handler func(*Command) (string, error)) {
+func (s *Slacker) HandleFunc(name string, handler func(*Command) error) {
 	s.Handle(name, HandlerFunc(handler))
 }
 
@@ -96,14 +103,17 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.HandleCommand(cmd)
+	err = h.HandleCommand(cmd)
 	if err != nil {
 		log.Printf("[error] handling command: %s", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	fmt.Fprint(w, res)
+	_, err = io.Copy(w, &cmd.buf)
+	if err != nil {
+		log.Printf("[error] writing: %s", err)
+	}
 }
 
 // Map from string slice.
