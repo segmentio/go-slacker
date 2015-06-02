@@ -1,10 +1,12 @@
 package slacker
 
-import "net/http"
-import "bytes"
-import "sync"
-import "log"
-import "io"
+import (
+	"bytes"
+	"io"
+	"log"
+	"net/http"
+	"sync"
+)
 
 // Handler.
 type Handler interface {

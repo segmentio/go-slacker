@@ -1,10 +1,12 @@
 package main
 
-import "github.com/segmentio/go-slacker"
-import "github.com/tj/docopt"
-import "net/http"
-import "fmt"
-import "log"
+import (
+	"fmt"
+	"github.com/segmentio/go-slacker"
+	"github.com/tj/docopt"
+	"log"
+	"net/http"
+)
 
 var Version = "0.0.1"
 
