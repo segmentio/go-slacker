@@ -77,8 +77,15 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	command := r.Form.Get("command")
+
+	if command == "" {
+		http.Error(w, "command required", 400)
+		return
+	}
+
 	cmd := &Command{
-		Name:        r.Form.Get("command")[1:],
+		Name:        command[1:],
 		Text:        r.Form.Get("text"),
 		Token:       r.Form.Get("token"),
 		UserID:      r.Form.Get("user_id"),
