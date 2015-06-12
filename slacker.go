@@ -38,6 +38,11 @@ func (c *Command) Write(p []byte) (int, error) {
 	return c.buf.Write(p)
 }
 
+// Bytes returns the internal buffer.
+func (c *Command) Bytes() []byte {
+	return c.buf.Bytes()
+}
+
 // Slacker handles HTTP requests and command dispatching.
 type Slacker struct {
 	handlers map[string]Handler
