@@ -38,9 +38,16 @@ func (c *Command) Write(p []byte) (int, error) {
 	return c.buf.Write(p)
 }
 
-// Bytes returns the internal buffer.
+// Bytes returns the bytes written to the command,
+// primarily used for testing.
 func (c *Command) Bytes() []byte {
 	return c.buf.Bytes()
+}
+
+// Bytes returns the string written to the command,
+// primarily used for testing.
+func (c *Command) String() string {
+	return c.buf.String()
 }
 
 // Slacker handles HTTP requests and command dispatching.
