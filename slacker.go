@@ -55,13 +55,15 @@ type Slacker struct {
 	handlers map[string]Handler
 	sync.Mutex
 	tokens map[string]bool
+	debug  bool
 }
 
 // New slacker with valid `tokens`.
-func New(tokens []string) *Slacker {
+func New(tokens []string, debug bool) *Slacker {
 	return &Slacker{
 		handlers: make(map[string]Handler),
 		tokens:   toMap(tokens),
+		debug:    debug,
 	}
 }
 
@@ -69,6 +71,9 @@ func New(tokens []string) *Slacker {
 func (s *Slacker) ValidToken(token string) bool {
 	s.Lock()
 	defer s.Unlock()
+	if s.debug {
+		return true
+	}
 	return s.tokens[token]
 }
 
