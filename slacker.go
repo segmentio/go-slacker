@@ -44,7 +44,7 @@ func (c *Command) Bytes() []byte {
 	return c.buf.Bytes()
 }
 
-// Bytes returns the string written to the command,
+// String returns the string written to the command,
 // primarily used for testing.
 func (c *Command) String() string {
 	return c.buf.String()
