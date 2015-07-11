@@ -53,34 +53,43 @@ func (c *Command) String() string {
 
 // Slacker handles HTTP requests and command dispatching.
 type Slacker struct {
-	handlers map[string]Handler
+	handlers map[string]Handler // maps a command to its handler.
+	tokens   map[string]string  // maps a command to its token.
 	sync.Mutex
-	tokens map[string]bool
 }
 
-// New slacker with valid `tokens`.
-func New(tokens []string) *Slacker {
+// New slacker.
+func New() *Slacker {
 	return &Slacker{
 		handlers: make(map[string]Handler),
-		tokens:   toMap(tokens),
 	}
 }
 
-// ValidToken validates the given `token` against the set provided.
-func (s *Slacker) ValidToken(token string) bool {
+// ValidToken validates the given `token` for the given `command`.
+func (s *Slacker) ValidToken(command, token string) bool {
 	s.Lock()
 	defer s.Unlock()
-	return s.tokens[token]
+
+	// Under normal execution, we would have already validated whether the command
+	// exists or not. But since this an exported function, we must validate that
+	// the command does indeed exist.
+	t, ok := s.tokens[command]
+	if ok {
+		return t == token
+	}
+
+	return false
 }
 
-// Handle registers `handler` for command `name`.
-func (s *Slacker) Handle(name string, handler Handler) {
+// Handle registers `handler` for command `name` with `token`.
+func (s *Slacker) Handle(name, token string, handler Handler) {
 	s.handlers[name] = handler
+	s.tokens[name] = token
 }
 
-// HandleFunc registers `handler` function for command `name`.
-func (s *Slacker) HandleFunc(name string, handler func(*Command) error) {
-	s.Handle(name, HandlerFunc(handler))
+// HandleFunc registers `handler` function for command `name` with `token`.
+func (s *Slacker) HandleFunc(name, token string, handler func(*Command) error) {
+	s.Handle(name, token, HandlerFunc(handler))
 }
 
 // ServeHTTP handles slash command requests.
@@ -109,21 +118,20 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ChannelName: r.Form.Get("channel_name"),
 	}
 
-	if !s.ValidToken(cmd.Token) {
-		log.Printf("[error] invalid token %q", cmd.Token)
-		http.Error(w, fmt.Sprintf("Invalid token %q", cmd.Token), 401)
-		return
-	}
-
-	log.Printf("[info] received %s %q from %s in %s", cmd.Name, cmd.Text, cmd.UserName, cmd.ChannelName)
-
 	h, ok := s.handlers[cmd.Name]
-
 	if !ok {
 		log.Printf("[error] invalid command %q", cmd.Name)
 		http.Error(w, "Invalid command", 400)
 		return
 	}
+
+	if !s.ValidToken(cmd.Name, cmd.Token) {
+		log.Printf("[error] invalid token %q for command %q", cmd.Token, cmd.Name)
+		http.Error(w, fmt.Sprintf("Invalid token %q for command %q", cmd.Token, cmd.Name), 401)
+		return
+	}
+
+	log.Printf("[info] received %s %q from %s in %s", cmd.Name, cmd.Text, cmd.UserName, cmd.ChannelName)
 
 	err = h.HandleCommand(cmd)
 	if err != nil {

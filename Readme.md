@@ -4,19 +4,19 @@
  Slack slash command http.Handler.
 
 ```go
-slack := slacker.New(tokens)
+slack := slacker.New()
 
-slack.HandleFunc("hello", func(cmd *slacker.Command) error {
+slack.HandleFunc("hello", "foo", func(cmd *slacker.Command) error {
   fmt.Fprint(cmd, "Hello")
   fmt.Fprint(cmd, " World")
   return nil
 })
 
-slack.HandleFunc("boom", func(cmd *slacker.Command) error {
+slack.HandleFunc("boom", "foo", func(cmd *slacker.Command) error {
   return fmt.Errorf("something exploded")
 })
 
-slack.HandleFunc("deploy", func(cmd *slacker.Command) error {
+slack.HandleFunc("deploy", "foo", func(cmd *slacker.Command) error {
   fmt.Fprintf(cmd, "Deploying %q", cmd.Text)
   return nil
 })
@@ -78,23 +78,23 @@ Slacker handles HTTP requests and command dispatching.
 #### func  New
 
 ```go
-func New(tokens []string) *Slacker
+func New() *Slacker
 ```
-New slacker with valid `tokens`.
+New slacker.
 
 #### func (*Slacker) Handle
 
 ```go
-func (s *Slacker) Handle(name string, handler Handler)
+func (s *Slacker) Handle(name, token string, handler Handler)
 ```
-Handle registers `handler` for command `name`.
+Handle registers `handler` for command `name` with `token`.
 
 #### func (*Slacker) HandleFunc
 
 ```go
-func (s *Slacker) HandleFunc(name string, handler func(*Command) (string, error))
+func (s *Slacker) HandleFunc(name, token string, handler func(*Command) (string, error))
 ```
-HandleFunc registers `handler` function for command `name`.
+HandleFunc registers `handler` function for command `name` with `token`.
 
 #### func (*Slacker) ServeHTTP
 
@@ -106,6 +106,6 @@ ServeHTTP handles slash command requests.
 #### func (*Slacker) ValidToken
 
 ```go
-func (s *Slacker) ValidToken(token string) bool
+func (s *Slacker) ValidToken(command, token string) bool
 ```
-ValidToken validates the given `token` against the set provided.
+ValidToken validates the given `token` for the command. Returns `false` if the command is not registered.
