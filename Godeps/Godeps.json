@@ -1,0 +1,14 @@
+{
+	"ImportPath": "github.com/segmentio/go-slacker",
+	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/tj/docopt",
+			"Comment": "v1.0.0",
+			"Rev": "c8470e45692f168e8b380c5d625327e756d7d0a9"
+		}
+	]
+}
