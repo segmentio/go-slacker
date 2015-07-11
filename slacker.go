@@ -2,6 +2,7 @@ package slacker
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -110,7 +111,7 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if !s.ValidToken(cmd.Token) {
 		log.Printf("[error] invalid token %q", cmd.Token)
-		http.Error(w, "Invalid token", 401)
+		http.Error(w, fmt.Sprintf("Invalid token %q", cmd.Token), 401)
 		return
 	}
 
