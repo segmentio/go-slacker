@@ -62,6 +62,7 @@ type Slacker struct {
 func New() *Slacker {
 	return &Slacker{
 		handlers: make(map[string]Handler),
+		tokens:   make(map[string]string),
 	}
 }
 
