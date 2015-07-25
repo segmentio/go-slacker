@@ -3,9 +3,9 @@ package slacker
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
@@ -141,7 +141,12 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = io.Copy(w, &cmd.buf)
+	out := cmd.buf.Bytes()
+
+	w.Header().Set("Content-Length", strconv.Itoa(len(out)))
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+	_, err = w.Write(out)
 	if err != nil {
 		log.Printf("[error] writing: %s", err)
 	}

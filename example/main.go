@@ -13,7 +13,7 @@ var Version = "0.0.1"
 
 const Usage = `
   Usage:
-    slacker [--bind addr] [--token token]...
+    slacker [--bind addr] [--token token]
     slacker -h | --help
     slacker --version
 
