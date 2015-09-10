@@ -2,8 +2,10 @@ package slacker
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"sync"
@@ -22,6 +24,12 @@ func (h HandlerFunc) HandleCommand(cmd *Command) error {
 	return h(cmd)
 }
 
+// Message details sent to Slack.
+type message struct {
+	text    string
+	channel string
+}
+
 // Command details sent by Slack.
 type Command struct {
 	Name        string
@@ -31,6 +39,7 @@ type Command struct {
 	UserName    string
 	ChannelID   string
 	ChannelName string
+	public      bool
 	buf         bytes.Buffer
 }
 
@@ -39,30 +48,35 @@ func (c *Command) Write(p []byte) (int, error) {
 	return c.buf.Write(p)
 }
 
-// Bytes returns the bytes written to the command,
-// primarily used for testing.
+// Bytes returns the bytes written to the command.
 func (c *Command) Bytes() []byte {
 	return c.buf.Bytes()
 }
 
-// String returns the string written to the command,
-// primarily used for testing.
+// String returns the string written to the command.
 func (c *Command) String() string {
 	return c.buf.String()
+}
+
+// Public marks the response to the command to be redirected as a public response.
+func (c *Command) Public() {
+	c.public = true
 }
 
 // Slacker handles HTTP requests and command dispatching.
 type Slacker struct {
 	handlers map[string]Handler // maps a command to its handler.
 	tokens   map[string]string  // maps a command to its token.
+	webhook  string
 	sync.Mutex
 }
 
 // New slacker.
-func New() *Slacker {
+func New(webhook string) *Slacker {
 	return &Slacker{
 		handlers: make(map[string]Handler),
 		tokens:   make(map[string]string),
+		webhook:  webhook,
 	}
 }
 
@@ -141,17 +155,40 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = io.Copy(w, &cmd.buf)
-	if err != nil {
-		log.Printf("[error] writing: %s", err)
+	if !cmd.public {
+		_, err = io.Copy(w, &cmd.buf)
+		if err != nil {
+			log.Printf("[error] writing: %s", err)
+		}
+		return
 	}
-}
 
-// Map from string slice.
-func toMap(s []string) map[string]bool {
-	m := make(map[string]bool)
-	for _, k := range s {
-		m[k] = true
+	if s.webhook == "" {
+		log.Printf("[error] no webhook specified to post command %s", cmd.Text)
+		http.Error(w, "no webhook url specified to post command publicly", http.StatusInternalServerError)
+		return
 	}
-	return m
+
+	msg := &message{
+		text:    cmd.String(),
+		channel: "#" + cmd.ChannelName,
+	}
+
+	buf, err := json.Marshal(msg)
+	if err != nil {
+		http.Error(w, "error constructing public message: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := http.Post(s.webhook, "application/json", bytes.NewReader(buf))
+	if err != nil {
+		http.Error(w, "error sending public message: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		output, _ := ioutil.ReadAll(resp.Body)
+		http.Error(w, "slack rejected public message with "+string(output), http.StatusInternalServerError)
+	}
 }

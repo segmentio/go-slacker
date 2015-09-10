@@ -13,16 +13,16 @@ var Version = "0.0.1"
 
 const Usage = `
   Usage:
-    slacker [--bind addr] [--token token]
+    slacker [--bind addr] [--token token] [--webhook webhook]
     slacker -h | --help
     slacker --version
 
   Options:
-    --bind addr         bind address [default: :3000]
-    -t, --token token   valid token
-    -h, --help          output help information
-    -v, --version       output version
-
+    --bind addr             bind address [default: :3000]
+    -t, --token token       valid token
+    -w, --webhook webhook   webhook url
+    -h, --help              output help information
+    -v, --version           output version
 `
 
 func main() {
@@ -33,9 +33,10 @@ func main() {
 
 	addr := args["--bind"].(string)
 	token := args["--token"].(string)
+	webhook := args["--webhook"].(string)
 
 	log.Printf("[info] starting slacker %s", Version)
-	slack := slacker.New()
+	slack := slacker.New(webhook)
 
 	slack.HandleFunc("hello", token, func(cmd *slacker.Command) error {
 		fmt.Fprint(cmd, "Hello")
@@ -48,6 +49,7 @@ func main() {
 	})
 
 	slack.HandleFunc("deploy", token, func(cmd *slacker.Command) error {
+		cmd.Public()
 		fmt.Fprintf(cmd, "Deploying %q", cmd.Text)
 		return nil
 	})
