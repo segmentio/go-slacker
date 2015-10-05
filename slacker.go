@@ -9,7 +9,11 @@ import (
 	"sync"
 )
 
-// Handler.
+// Handler interface. Implementations can be registered to handle commands.
+//
+// HandleCommand should write a reply to the command and then return. An
+// appropriate user facing error should be returned if the command cannot be
+// handled.
 type Handler interface {
 	HandleCommand(cmd *Command) error
 }
@@ -23,6 +27,9 @@ func (h HandlerFunc) HandleCommand(cmd *Command) error {
 }
 
 // Command details sent by Slack.
+//
+// Command implements the io.Writer interface so handlers can write responses
+// directly to it.
 type Command struct {
 	Name        string
 	Text        string
@@ -145,13 +152,4 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("[error] writing: %s", err)
 	}
-}
-
-// Map from string slice.
-func toMap(s []string) map[string]bool {
-	m := make(map[string]bool)
-	for _, k := range s {
-		m[k] = true
-	}
-	return m
 }
