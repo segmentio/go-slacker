@@ -9,9 +9,10 @@ import (
 	"github.com/tj/docopt"
 )
 
-var Version = "0.0.1"
+const (
+	version = "0.0.1"
 
-const Usage = `
+	usage = `
   Usage:
     slacker [--bind addr] [--token token]
     slacker -h | --help
@@ -21,12 +22,11 @@ const Usage = `
     --bind addr         bind address [default: :3000]
     -t, --token token   valid token
     -h, --help          output help information
-    -v, --version       output version
-
-`
+    -v, --version       output version`
+)
 
 func main() {
-	args, err := docopt.Parse(Usage, nil, true, Version, false)
+	args, err := docopt.Parse(usage, nil, true, version, false)
 	if err != nil {
 		log.Fatalf("error: %s", err)
 	}
@@ -34,7 +34,7 @@ func main() {
 	addr := args["--bind"].(string)
 	token := args["--token"].(string)
 
-	log.Printf("[info] starting slacker %s", Version)
+	log.Printf("[info] starting slacker %s", version)
 	slack := slacker.New()
 
 	slack.HandleFunc("hello", token, func(cmd *slacker.Command) error {
