@@ -20,6 +20,8 @@ slack.HandleFunc("deploy", "foo", func(cmd *slacker.Command) error {
   fmt.Fprintf(cmd, "Deploying %q", cmd.Text)
   return nil
 })
+
+log.Fatal(http.ListenAndServe(":8080", slack))
 ```
 
 ## Usage
