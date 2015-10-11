@@ -24,6 +24,13 @@ slack.HandleFunc("deploy", "foo", func(cmd *slacker.Command) error {
 log.Fatal(http.ListenAndServe(":8080", slack))
 ```
 
+
+## Testing Locally
+Use the [slacker-cli](https://github.com/segmentio/slacker-cli) tool, which
+spins up a local chat room that can talk to your Slack custom slash command
+server.
+
+
 ## Usage
 
 #### type Command
