@@ -2,6 +2,7 @@ package slacker_test
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -16,7 +17,7 @@ import (
 func TestParsesForm(t *testing.T) {
 	slack := slacker.New()
 	helloC := make(chan *slacker.Command)
-	slack.HandleFunc("hello", "foo", func(cmd *slacker.Command) error {
+	slack.HandleFunc("hello", "foo", func(w io.Writer, cmd *slacker.Command) error {
 		go func() {
 			helloC <- cmd
 		}()
@@ -90,7 +91,7 @@ func TestFailsForInvalidCommand(t *testing.T) {
 
 func TestFailsForInvalidToken(t *testing.T) {
 	slack := slacker.New()
-	slack.HandleFunc("hello", "foo", func(cmd *slacker.Command) error {
+	slack.HandleFunc("hello", "foo", func(w io.Writer, cmd *slacker.Command) error {
 		return nil
 	})
 	ts := httptest.NewServer(slack)
@@ -105,7 +106,7 @@ func TestFailsForInvalidToken(t *testing.T) {
 
 func TestFailsWhenHandlerErrors(t *testing.T) {
 	slack := slacker.New()
-	slack.HandleFunc("hello", "foo", func(cmd *slacker.Command) error {
+	slack.HandleFunc("hello", "foo", func(w io.Writer, cmd *slacker.Command) error {
 		return fmt.Errorf("test error")
 	})
 	ts := httptest.NewServer(slack)
@@ -120,11 +121,11 @@ func TestFailsWhenHandlerErrors(t *testing.T) {
 
 func TestValidatesToken(t *testing.T) {
 	slack := slacker.New()
-	empty := func(cmd *slacker.Command) error {
+	noOp := func(w io.Writer, cmd *slacker.Command) error {
 		return nil
 	}
-	slack.HandleFunc("foo", "bar", empty)
-	slack.HandleFunc("qaz", "qux", empty)
+	slack.HandleFunc("foo", "bar", noOp)
+	slack.HandleFunc("qaz", "qux", noOp)
 
 	// Correct tokens are validated.
 	assert.Equal(t, true, slack.ValidToken("foo", "bar"))

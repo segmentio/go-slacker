@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -37,18 +38,18 @@ func main() {
 	log.Printf("[info] starting slacker %s", version)
 	slack := slacker.New()
 
-	slack.HandleFunc("hello", token, func(cmd *slacker.Command) error {
-		fmt.Fprint(cmd, "Hello")
-		fmt.Fprint(cmd, " World")
+	slack.HandleFunc("hello", token, func(w io.Writer, cmd *slacker.Command) error {
+		fmt.Fprint(w, "Hello")
+		fmt.Fprint(w, " World")
 		return nil
 	})
 
-	slack.HandleFunc("boom", token, func(cmd *slacker.Command) error {
+	slack.HandleFunc("boom", token, func(w io.Writer, cmd *slacker.Command) error {
 		return fmt.Errorf("something exploded")
 	})
 
-	slack.HandleFunc("deploy", token, func(cmd *slacker.Command) error {
-		fmt.Fprintf(cmd, "Deploying %q", cmd.Text)
+	slack.HandleFunc("deploy", token, func(w io.Writer, cmd *slacker.Command) error {
+		fmt.Fprintf(w, "Deploying %q", cmd.Text)
 		return nil
 	})
 

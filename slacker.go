@@ -15,21 +15,18 @@ import (
 // appropriate user facing error should be returned if the command cannot be
 // handled.
 type Handler interface {
-	HandleCommand(cmd *Command) error
+	HandleCommand(w io.Writer, cmd *Command) error
 }
 
 // HandlerFunc convenience type.
-type HandlerFunc func(cmd *Command) error
+type HandlerFunc func(w io.Writer, cmd *Command) error
 
 // HandleCommand invokes itself.
-func (h HandlerFunc) HandleCommand(cmd *Command) error {
-	return h(cmd)
+func (h HandlerFunc) HandleCommand(w io.Writer, cmd *Command) error {
+	return h(w, cmd)
 }
 
 // Command details sent by Slack.
-//
-// Command implements the io.Writer interface so handlers can write responses
-// directly to it.
 type Command struct {
 	Name        string
 	Text        string
@@ -38,24 +35,6 @@ type Command struct {
 	UserName    string
 	ChannelID   string
 	ChannelName string
-	buf         bytes.Buffer
-}
-
-// Write to the internal bytes.Buffer.
-func (c *Command) Write(p []byte) (int, error) {
-	return c.buf.Write(p)
-}
-
-// Bytes returns the bytes written to the command,
-// primarily used for testing.
-func (c *Command) Bytes() []byte {
-	return c.buf.Bytes()
-}
-
-// String returns the string written to the command,
-// primarily used for testing.
-func (c *Command) String() string {
-	return c.buf.String()
 }
 
 // Slacker handles HTTP requests and command dispatching.
@@ -96,7 +75,7 @@ func (s *Slacker) Handle(name, token string, handler Handler) {
 }
 
 // HandleFunc registers `handler` function for command `name` with `token`.
-func (s *Slacker) HandleFunc(name, token string, handler func(*Command) error) {
+func (s *Slacker) HandleFunc(name, token string, handler func(io.Writer, *Command) error) {
 	s.Handle(name, token, HandlerFunc(handler))
 }
 
@@ -141,14 +120,15 @@ func (s *Slacker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[info] received %s %q from %s in %s", cmd.Name, cmd.Text, cmd.UserName, cmd.ChannelName)
 
-	err = h.HandleCommand(cmd)
+	var buf bytes.Buffer
+	err = h.HandleCommand(&buf, cmd)
 	if err != nil {
 		log.Printf("[error] handling command: %s", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	_, err = io.Copy(w, &cmd.buf)
+	_, err = io.Copy(w, &buf)
 	if err != nil {
 		log.Printf("[error] writing: %s", err)
 	}
