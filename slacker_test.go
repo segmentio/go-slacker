@@ -125,14 +125,16 @@ func TestValidatesToken(t *testing.T) {
 		return nil
 	}
 	slack.HandleFunc("foo", "bar", noOp)
-	slack.HandleFunc("qaz", "qux", noOp)
+	slack.HandleFunc("qaz", "", noOp)
 
 	// Correct tokens are validated.
 	assert.Equal(t, true, slack.ValidToken("foo", "bar"))
-	assert.Equal(t, true, slack.ValidToken("qaz", "qux"))
+	assert.Equal(t, true, slack.ValidToken("qaz", ""))
+
 	// Tokens are only valid for specific commands.
-	assert.Equal(t, false, slack.ValidToken("foo", "qux"))
+	assert.Equal(t, false, slack.ValidToken("foo", ""))
 	assert.Equal(t, false, slack.ValidToken("qaz", "bar"))
+
 	// Invalid commands are not validated.
 	assert.Equal(t, false, slack.ValidToken("foobar", ""))
 }

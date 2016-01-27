@@ -2,6 +2,7 @@ package slacker
 
 import (
 	"bytes"
+	"crypto/subtle"
 	"fmt"
 	"io"
 	"log"
@@ -58,14 +59,11 @@ func (s *Slacker) ValidToken(command, token string) bool {
 	defer s.Unlock()
 
 	// Under normal execution, we would have already validated whether the command
-	// exists or not. But since this an exported function, we must validate that
-	// the command does indeed exist.
-	t, ok := s.tokens[command]
-	if ok {
-		return t == token
-	}
-
-	return false
+	// exists or not. But this is an exported function, so validate that it does
+	// indeed exist.
+	t, exists := s.tokens[command]
+	valid := subtle.ConstantTimeCompare([]byte(t), []byte(token)) == 1
+	return exists && valid
 }
 
 // Handle registers `handler` for command `name` with `token`.
